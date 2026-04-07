@@ -49,7 +49,6 @@
       user-select: none;
     }
     .tab.active { background: #3D2B1A; color: #F5EFE0; }
-
     #ring-wrap {
       position: relative;
       width: min(260px, 70vw);
@@ -59,7 +58,6 @@
     }
     #ring-wrap:active { cursor: grabbing; }
     #ring-svg { width: 100%; height: 100%; display: block; overflow: visible; }
-
     #time-center {
       position: absolute;
       top: 50%; left: 50%;
@@ -103,7 +101,6 @@
       color: #B09060;
       pointer-events: none;
     }
-
     #controls {
       display: flex;
       gap: clamp(14px, 4vw, 22px);
@@ -140,8 +137,6 @@
     #play-btn:hover { background: #2A1A0A; }
     #play-btn:active { transform: scale(0.93); }
     #play-btn svg { width: clamp(22px, 6vw, 28px); height: clamp(22px, 6vw, 28px); fill: #F5EFE0; flex-shrink: 0; }
-
-    /* 세션 점 */
     .dots { display: flex; gap: clamp(6px, 2vw, 10px); }
     .dot {
       width: clamp(5px, 1.5vw, 7px);
@@ -152,7 +147,7 @@
     }
     .dot.done { background: #7A5830; }
 
-    /* 오늘 총 집중 시간 */
+    /* 오늘 집중 */
     #today-wrap {
       display: flex;
       flex-direction: column;
@@ -201,6 +196,49 @@
     }
     #notif-btn:hover { background: #EDE3D0; }
     #notif-btn.granted { opacity: 0; pointer-events: none; height: 0; padding: 0; border: none; overflow: hidden; }
+
+    /* 완료 오버레이 — iOS에서 alert 대신 사용 */
+    #complete-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: rgba(245, 239, 224, 0.96);
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1.4rem;
+    }
+    #complete-overlay.show { display: flex; }
+    #complete-icon {
+      font-size: 48px;
+      line-height: 1;
+    }
+    #complete-title {
+      font-size: 24px;
+      font-weight: 200;
+      color: #3D2B1A;
+      letter-spacing: -0.5px;
+    }
+    #complete-sub {
+      font-size: 13px;
+      color: #B09060;
+      letter-spacing: 0.06em;
+    }
+    #complete-btn {
+      margin-top: 0.4rem;
+      padding: 14px 36px;
+      background: #3D2B1A;
+      color: #F5EFE0;
+      border: none;
+      border-radius: 28px;
+      font-size: 14px;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.2s;
+    }
+    #complete-btn:hover { background: #2A1A0A; }
 
     #banner {
       position: fixed;
@@ -289,7 +327,6 @@
     <div class="dot" id="d3"></div>
   </div>
 
-  <!-- 오늘 총 집중 시간 -->
   <div id="today-wrap">
     <div id="today-label">오늘 집중</div>
     <div id="today-time">0분</div>
@@ -297,6 +334,14 @@
   </div>
 
   <button id="notif-btn">🔔 알림 허용</button>
+</div>
+
+<!-- iOS alert 대신 커스텀 오버레이 -->
+<div id="complete-overlay">
+  <div id="complete-icon">🍅</div>
+  <div id="complete-title"></div>
+  <div id="complete-sub"></div>
+  <button id="complete-btn"></button>
 </div>
 
 <div id="banner"></div>
@@ -309,27 +354,61 @@
 
   let mode = 'focus', fSec = FOCUS_DEF, bSec = BREAK_DEF;
   let total = FOCUS_DEF, remain = FOCUS_DEF;
-  let running = false, started = false, session = 0, ticker = null;
+  let running = false, started = false, session = 0;
+  let ticker = null, startEpoch = null, startRemain = null;
 
-  const prog      = document.getElementById('prog');
-  const dragFill  = document.getElementById('drag-fill');
-  const dragPrev  = document.getElementById('drag-preview');
-  const handle    = document.getElementById('handle');
-  const timeTxt   = document.getElementById('time-text');
-  const timeInp   = document.getElementById('time-inp');
-  const modeLbl   = document.getElementById('mode-lbl');
-  const playBtn   = document.getElementById('play-btn');
-  const playIcon  = document.getElementById('play-icon');
-  const resetBtn  = document.getElementById('reset-btn');
-  const tabF      = document.getElementById('tab-f');
-  const tabB      = document.getElementById('tab-b');
-  const ringWrap  = document.getElementById('ring-wrap');
-  const banner    = document.getElementById('banner');
-  const notifBtn  = document.getElementById('notif-btn');
-  const todayTime = document.getElementById('today-time');
-  const todayReset = document.getElementById('today-reset');
+  const prog          = document.getElementById('prog');
+  const dragFill      = document.getElementById('drag-fill');
+  const dragPrev      = document.getElementById('drag-preview');
+  const handle        = document.getElementById('handle');
+  const timeTxt       = document.getElementById('time-text');
+  const timeInp       = document.getElementById('time-inp');
+  const modeLbl       = document.getElementById('mode-lbl');
+  const playBtn       = document.getElementById('play-btn');
+  const playIcon      = document.getElementById('play-icon');
+  const resetBtn      = document.getElementById('reset-btn');
+  const tabF          = document.getElementById('tab-f');
+  const tabB          = document.getElementById('tab-b');
+  const ringWrap      = document.getElementById('ring-wrap');
+  const banner        = document.getElementById('banner');
+  const notifBtn      = document.getElementById('notif-btn');
+  const todayTimeEl   = document.getElementById('today-time');
+  const todayResetBtn = document.getElementById('today-reset');
+  const overlay       = document.getElementById('complete-overlay');
+  const overlayIcon   = document.getElementById('complete-icon');
+  const overlayTitle  = document.getElementById('complete-title');
+  const overlaySub    = document.getElementById('complete-sub');
+  const overlayBtn    = document.getElementById('complete-btn');
 
-  /* ── 오늘 집중 시간 (localStorage) ── */
+  /* ── AudioContext — iOS는 사용자 터치 이후 resume 필요 ── */
+  let audioCtx = null;
+  function getAudioCtx() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    return audioCtx;
+  }
+  /* 첫 터치/클릭 시 AudioContext 미리 활성화 */
+  document.addEventListener('touchstart', () => getAudioCtx(), { once: true, passive: true });
+  document.addEventListener('click', () => getAudioCtx(), { once: true });
+
+  function chime() {
+    try {
+      const ctx = getAudioCtx();
+      [[523,0],[659,0.22],[784,0.44]].forEach(([f,t]) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.frequency.value = f;
+        o.type = 'sine';
+        g.gain.setValueAtTime(0, ctx.currentTime + t);
+        g.gain.linearRampToValueAtTime(0.25, ctx.currentTime + t + 0.05);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.8);
+        o.start(ctx.currentTime + t);
+        o.stop(ctx.currentTime + t + 0.85);
+      });
+    } catch(e) { console.warn('chime error', e); }
+  }
+
+  /* ── 오늘 집중 시간 ── */
   const TODAY_KEY = 'pomo_focus_date';
   const SEC_KEY   = 'pomo_focus_sec';
 
@@ -343,24 +422,21 @@
     }
     return parseInt(localStorage.getItem(SEC_KEY) || '0');
   }
-
   function addFocusSec(s) {
+    if (s <= 0) return;
     const today = new Date().toDateString();
     localStorage.setItem(TODAY_KEY, today);
     const prev = parseInt(localStorage.getItem(SEC_KEY) || '0');
     localStorage.setItem(SEC_KEY, String(prev + s));
     renderTodayTime();
   }
-
   function renderTodayTime() {
     const s = getTodaySec();
     const h = Math.floor(s / 3600);
     const m = Math.floor((s % 3600) / 60);
-    if (h > 0) todayTime.textContent = `${h}시간 ${m}분`;
-    else todayTime.textContent = `${m}분`;
+    todayTimeEl.textContent = h > 0 ? `${h}시간 ${m}분` : `${m}분`;
   }
-
-  todayReset.addEventListener('click', () => {
+  todayResetBtn.addEventListener('click', () => {
     if (!confirm('오늘 집중 기록을 초기화할까요?')) return;
     localStorage.setItem(SEC_KEY, '0');
     renderTodayTime();
@@ -379,11 +455,14 @@
     }
   });
   function sendNotif(title, body) {
-    if (Notification.permission === 'granted') new Notification(title, { body });
+    if (Notification.permission === 'granted') {
+      try { new Notification(title, { body }); } catch(e) {}
+    }
   }
 
   /* ── 유틸 ── */
   function fmt(s) {
+    s = Math.max(0, Math.round(s));
     return String(Math.floor(s / 60)).padStart(2,'0') + ':' + String(s % 60).padStart(2,'0');
   }
   function handleXY(pct) {
@@ -428,49 +507,83 @@
     modeLbl.textContent = m === 'focus' ? '집중' : '휴식';
   }
 
-  /* ── 타이머 ── */
-  let focusedThisSec = 0; // 현재 세션에서 집중한 초
+  /* ── 완료 오버레이 ── */
+  function showOverlay(isFocusDone) {
+    if (isFocusDone) {
+      overlayIcon.textContent = '🍅';
+      overlayTitle.textContent = '집중 완료!';
+      overlaySub.textContent = '잠깐 쉬어가세요';
+      overlayBtn.textContent = '휴식 시작';
+      overlayBtn.onclick = () => {
+        overlay.classList.remove('show');
+        started = true; applyMode('break'); draw();
+        _startTicker(); setIcon(true);
+      };
+    } else {
+      overlayIcon.textContent = '☕';
+      overlayTitle.textContent = '휴식 종료';
+      overlaySub.textContent = '새 뽀모도로를 시작할까요?';
+      overlayBtn.textContent = '집중 시작';
+      overlayBtn.onclick = () => {
+        overlay.classList.remove('show');
+        started = false; applyMode('focus'); draw(); setIcon(false);
+      };
+    }
+    overlay.classList.add('show');
+  }
 
-  function tick() {
-    if (remain <= 0) {
-      clearInterval(ticker); running = false;
+  /* ── 타이머 — Date 기반으로 iOS 백그라운드 드리프트 방지 ── */
+  let focusedThisSec = 0;
 
-      // 집중 모드였으면 누적
+  function _startTicker() {
+    clearInterval(ticker);
+    startEpoch = Date.now();
+    startRemain = remain;
+    ticker = setInterval(onTick, 500); // 500ms마다 체크해서 드리프트 최소화
+  }
+
+  function onTick() {
+    const elapsed = Math.floor((Date.now() - startEpoch) / 1000);
+    const newRemain = Math.max(0, startRemain - elapsed);
+
+    if (mode === 'focus') focusedThisSec = elapsed;
+
+    remain = newRemain;
+    draw();
+
+    if (newRemain <= 0) {
+      clearInterval(ticker);
+      running = false;
+
       if (mode === 'focus') {
         addFocusSec(focusedThisSec);
         focusedThisSec = 0;
+        session = Math.min(session + 1, 4);
+        updateDots();
+        sendNotif('집중 완료 🍅', '잘 하셨어요! 휴식을 시작합니다.');
+      } else {
+        sendNotif('휴식 종료 ☕', '다시 집중할 준비가 됐나요?');
       }
 
       chime();
-      if (mode === 'focus') {
-        session = Math.min(session + 1, 4); updateDots();
-        sendNotif('집중 완료 🍅', '잘 하셨어요! 휴식을 시작합니다.');
-        showBanner('집중 완료! 휴식을 시작합니다');
-        started = true; applyMode('break'); draw();
-        ticker = setInterval(tick, 1000); running = true; setIcon(true);
-      } else {
-        sendNotif('휴식 종료 ☕', '다시 집중할 준비가 됐나요?');
-        showBanner('휴식 종료 — 새 뽀모도로를 시작하세요');
-        started = false; applyMode('focus'); draw(); setIcon(false);
-      }
-      return;
+      const wasFocus = mode === 'focus';
+      showOverlay(wasFocus);
+      setIcon(false);
     }
-    remain--;
-    if (mode === 'focus') focusedThisSec++;
-    draw();
   }
 
   function start() {
     if (running || remain <= 0) return;
+    getAudioCtx(); // iOS: 터치 이벤트 안에서 미리 활성화
     started = true; running = true;
     focusedThisSec = 0;
-    ticker = setInterval(tick, 1000);
+    _startTicker();
     draw(); setIcon(true);
   }
 
   function pause() {
-    clearInterval(ticker); running = false;
-    // 일시정지 시 지금까지 집중한 시간 누적
+    clearInterval(ticker);
+    running = false;
     if (mode === 'focus' && focusedThisSec > 0) {
       addFocusSec(focusedThisSec);
       focusedThisSec = 0;
@@ -480,6 +593,7 @@
 
   function reset() {
     pause(); started = false; focusedThisSec = 0;
+    startEpoch = null; startRemain = null;
     applyMode(mode); draw(); setIcon(false);
   }
 
@@ -488,20 +602,6 @@
     banner.textContent = msg; banner.classList.add('show');
     clearTimeout(bannerTimer);
     bannerTimer = setTimeout(() => banner.classList.remove('show'), 3000);
-  }
-
-  function chime() {
-    try {
-      const ctx = new AudioContext();
-      [[523,0],[659,0.2],[784,0.4]].forEach(([f,t]) => {
-        const o = ctx.createOscillator(), g = ctx.createGain();
-        o.connect(g); g.connect(ctx.destination);
-        o.frequency.value = f;
-        g.gain.setValueAtTime(0.15, ctx.currentTime + t);
-        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.7);
-        o.start(ctx.currentTime + t); o.stop(ctx.currentTime + t + 0.8);
-      });
-    } catch(e) {}
   }
 
   /* ── 이벤트 ── */
