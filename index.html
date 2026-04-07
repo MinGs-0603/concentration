@@ -9,13 +9,11 @@
   <title>뽀모도로</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-
     html, body {
       height: 100%;
       font-family: -apple-system, 'SF Pro Display', BlinkMacSystemFont, sans-serif;
       background: #F5EFE0;
     }
-
     body {
       min-height: 100vh;
       display: flex;
@@ -23,7 +21,6 @@
       justify-content: center;
       padding: 2rem 1rem;
     }
-
     #card {
       display: flex;
       flex-direction: column;
@@ -31,7 +28,6 @@
       gap: clamp(1.2rem, 3vw, 2rem);
       width: min(300px, 90vw);
     }
-
     .tabs {
       display: flex;
       background: #E8DDC8;
@@ -54,7 +50,6 @@
     }
     .tab.active { background: #3D2B1A; color: #F5EFE0; }
 
-    /* 링 래퍼 — SVG가 꽉 채움, 핸들은 SVG 안에 */
     #ring-wrap {
       position: relative;
       width: min(260px, 70vw);
@@ -63,15 +58,8 @@
       user-select: none;
     }
     #ring-wrap:active { cursor: grabbing; }
+    #ring-svg { width: 100%; height: 100%; display: block; overflow: visible; }
 
-    #ring-svg {
-      width: 100%;
-      height: 100%;
-      display: block;
-      overflow: visible;
-    }
-
-    /* 시간 표시 — 링 위에 절대 배치 */
     #time-center {
       position: absolute;
       top: 50%; left: 50%;
@@ -121,7 +109,6 @@
       gap: clamp(14px, 4vw, 22px);
       align-items: center;
     }
-
     #reset-btn {
       width: clamp(46px, 12vw, 56px);
       height: clamp(46px, 12vw, 56px);
@@ -137,7 +124,6 @@
     }
     #reset-btn:hover { background: #E0D4BC; border-color: #A8906A; }
     #reset-btn svg { width: clamp(16px, 4vw, 20px); height: clamp(16px, 4vw, 20px); }
-
     #play-btn {
       width: clamp(64px, 17vw, 78px);
       height: clamp(64px, 17vw, 78px);
@@ -153,13 +139,9 @@
     }
     #play-btn:hover { background: #2A1A0A; }
     #play-btn:active { transform: scale(0.93); }
-    #play-btn svg {
-      width: clamp(22px, 6vw, 28px);
-      height: clamp(22px, 6vw, 28px);
-      fill: #F5EFE0;
-      flex-shrink: 0;
-    }
+    #play-btn svg { width: clamp(22px, 6vw, 28px); height: clamp(22px, 6vw, 28px); fill: #F5EFE0; flex-shrink: 0; }
 
+    /* 세션 점 */
     .dots { display: flex; gap: clamp(6px, 2vw, 10px); }
     .dot {
       width: clamp(5px, 1.5vw, 7px);
@@ -170,6 +152,41 @@
     }
     .dot.done { background: #7A5830; }
 
+    /* 오늘 총 집중 시간 */
+    #today-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    #today-label {
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #C0A870;
+    }
+    #today-time {
+      font-size: 22px;
+      font-weight: 200;
+      color: #3D2B1A;
+      letter-spacing: -0.5px;
+      line-height: 1;
+    }
+    #today-reset {
+      font-size: 10px;
+      color: #C0A870;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      letter-spacing: 0.08em;
+      padding: 2px 0;
+      font-family: inherit;
+      opacity: 0.7;
+      transition: opacity 0.15s;
+    }
+    #today-reset:hover { opacity: 1; }
+
+    /* 알림 버튼 */
     #notif-btn {
       font-size: 11px;
       letter-spacing: 0.06em;
@@ -179,14 +196,11 @@
       border-radius: 20px;
       padding: 6px 14px;
       cursor: pointer;
-      transition: background 0.15s, opacity 0.3s, height 0.3s;
+      transition: background 0.15s, opacity 0.3s;
       font-family: inherit;
     }
     #notif-btn:hover { background: #EDE3D0; }
-    #notif-btn.granted {
-      opacity: 0; pointer-events: none;
-      height: 0; padding: 0; border: none; overflow: hidden;
-    }
+    #notif-btn.granted { opacity: 0; pointer-events: none; height: 0; padding: 0; border: none; overflow: hidden; }
 
     #banner {
       position: fixed;
@@ -225,36 +239,28 @@
   </div>
 
   <div id="ring-wrap">
-    <!-- 핸들을 SVG 안에 넣어서 좌표계 일치 -->
     <svg id="ring-svg" viewBox="0 0 210 210" style="overflow:visible; width:100%; height:100%;">
-      <!-- 배경 링 -->
-      <circle cx="105" cy="105" r="90"
-        fill="none" stroke="#3D2B1A" stroke-width="1" opacity="0.15"/>
-      <!-- 드래그 프리뷰 점선 -->
+      <circle cx="105" cy="105" r="90" fill="none" stroke="#3D2B1A" stroke-width="1" opacity="0.15"/>
       <circle id="drag-preview" cx="105" cy="105" r="90"
         fill="none" stroke="#3D2B1A" stroke-width="1.5"
         stroke-linecap="round" stroke-dasharray="4 7"
         transform="rotate(-90 105 105)" opacity="0"
         style="transition: opacity 0.15s;"/>
-      <!-- 드래그 채움 링 -->
       <circle id="drag-fill" cx="105" cy="105" r="90"
         fill="none" stroke="#3D2B1A" stroke-width="2"
         stroke-linecap="round"
         stroke-dasharray="565.49" stroke-dashoffset="565.49"
         transform="rotate(-90 105 105)" opacity="0"/>
-      <!-- 타이머 진행 링 -->
       <circle id="prog" cx="105" cy="105" r="90"
         fill="none" stroke="#B83020" stroke-width="2"
         stroke-linecap="round"
         stroke-dasharray="565.49" stroke-dashoffset="565.49"
         transform="rotate(-90 105 105)" opacity="0"
         style="transition: stroke 0.5s ease;"/>
-      <!-- 핸들 점 — SVG 안에 있으므로 좌표계 완전히 일치 -->
       <circle id="handle" cx="105" cy="15" r="6"
         fill="#3D2B1A" stroke="#F5EFE0" stroke-width="3"
         style="transition: fill 0.35s;"/>
     </svg>
-
     <div id="time-center">
       <div id="time-text">50:00</div>
       <input id="time-inp" type="text" maxlength="5" placeholder="MM:SS"/>
@@ -283,21 +289,23 @@
     <div class="dot" id="d3"></div>
   </div>
 
+  <!-- 오늘 총 집중 시간 -->
+  <div id="today-wrap">
+    <div id="today-label">오늘 집중</div>
+    <div id="today-time">0분</div>
+    <button id="today-reset">초기화</button>
+  </div>
+
   <button id="notif-btn">🔔 알림 허용</button>
 </div>
 
 <div id="banner"></div>
 
 <script>
-  const FOCUS_DEF = 50 * 60;
-  const BREAK_DEF = 10 * 60;
-  const MAX_F = 60 * 60;
-  const MAX_B = 15 * 60;
-  const R = 90;
-  const CIRC = 2 * Math.PI * R;
-  const CF = '#B83020';
-  const CB = '#2E7D52';
-  const CI = '#3D2B1A';
+  const FOCUS_DEF = 50 * 60, BREAK_DEF = 10 * 60;
+  const MAX_F = 60 * 60, MAX_B = 15 * 60;
+  const R = 90, CIRC = 2 * Math.PI * R;
+  const CF = '#B83020', CB = '#2E7D52', CI = '#3D2B1A';
 
   let mode = 'focus', fSec = FOCUS_DEF, bSec = BREAK_DEF;
   let total = FOCUS_DEF, remain = FOCUS_DEF;
@@ -318,6 +326,45 @@
   const ringWrap  = document.getElementById('ring-wrap');
   const banner    = document.getElementById('banner');
   const notifBtn  = document.getElementById('notif-btn');
+  const todayTime = document.getElementById('today-time');
+  const todayReset = document.getElementById('today-reset');
+
+  /* ── 오늘 집중 시간 (localStorage) ── */
+  const TODAY_KEY = 'pomo_focus_date';
+  const SEC_KEY   = 'pomo_focus_sec';
+
+  function getTodaySec() {
+    const saved = localStorage.getItem(TODAY_KEY);
+    const today = new Date().toDateString();
+    if (saved !== today) {
+      localStorage.setItem(TODAY_KEY, today);
+      localStorage.setItem(SEC_KEY, '0');
+      return 0;
+    }
+    return parseInt(localStorage.getItem(SEC_KEY) || '0');
+  }
+
+  function addFocusSec(s) {
+    const today = new Date().toDateString();
+    localStorage.setItem(TODAY_KEY, today);
+    const prev = parseInt(localStorage.getItem(SEC_KEY) || '0');
+    localStorage.setItem(SEC_KEY, String(prev + s));
+    renderTodayTime();
+  }
+
+  function renderTodayTime() {
+    const s = getTodaySec();
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    if (h > 0) todayTime.textContent = `${h}시간 ${m}분`;
+    else todayTime.textContent = `${m}분`;
+  }
+
+  todayReset.addEventListener('click', () => {
+    if (!confirm('오늘 집중 기록을 초기화할까요?')) return;
+    localStorage.setItem(SEC_KEY, '0');
+    renderTodayTime();
+  });
 
   /* ── 브라우저 알림 ── */
   function initNotif() {
@@ -337,10 +384,8 @@
 
   /* ── 유틸 ── */
   function fmt(s) {
-    return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+    return String(Math.floor(s / 60)).padStart(2,'0') + ':' + String(s % 60).padStart(2,'0');
   }
-
-  /* 핸들 SVG 좌표 계산 (viewBox 기준 105,105 중심, r=90) */
   function handleXY(pct) {
     const deg = 360 * pct - 90;
     const rad = deg * Math.PI / 180;
@@ -350,22 +395,17 @@
   function draw() {
     const pct = total > 0 ? remain / total : 0;
     const { x, y } = handleXY(pct);
-
     if (started) {
-      /* 타이머 중: 진행 링 표시, 핸들 숨김 */
       handle.setAttribute('opacity', '0');
       prog.setAttribute('opacity', '1');
       prog.setAttribute('stroke', mode === 'focus' ? CF : CB);
       prog.setAttribute('stroke-dashoffset', (CIRC * (1 - pct)).toFixed(2));
     } else {
-      /* 대기/드래그: 핸들 표시, 진행 링 숨김 */
       handle.setAttribute('opacity', '1');
       handle.setAttribute('cx', x.toFixed(2));
       handle.setAttribute('cy', y.toFixed(2));
-      handle.setAttribute('fill', CI);
       prog.setAttribute('opacity', '0');
     }
-
     timeTxt.textContent = fmt(remain);
     document.title = fmt(remain) + (mode === 'focus' ? ' · 집중' : ' · 휴식');
   }
@@ -375,12 +415,10 @@
       ? '<rect x="5" y="4" width="4.5" height="16" rx="1.5"/><rect x="14.5" y="4" width="4.5" height="16" rx="1.5"/>'
       : '<path d="M6 3.5l13 8.5-13 8.5V3.5z"/>';
   }
-
   function updateDots() {
     for (let i = 0; i < 4; i++)
       document.getElementById('d' + i).className = 'dot' + (i < session ? ' done' : '');
   }
-
   function applyMode(m) {
     mode = m;
     total = m === 'focus' ? fSec : bSec;
@@ -391,9 +429,18 @@
   }
 
   /* ── 타이머 ── */
+  let focusedThisSec = 0; // 현재 세션에서 집중한 초
+
   function tick() {
     if (remain <= 0) {
       clearInterval(ticker); running = false;
+
+      // 집중 모드였으면 누적
+      if (mode === 'focus') {
+        addFocusSec(focusedThisSec);
+        focusedThisSec = 0;
+      }
+
       chime();
       if (mode === 'focus') {
         session = Math.min(session + 1, 4); updateDots();
@@ -408,20 +455,32 @@
       }
       return;
     }
-    remain--; draw();
+    remain--;
+    if (mode === 'focus') focusedThisSec++;
+    draw();
   }
 
   function start() {
     if (running || remain <= 0) return;
     started = true; running = true;
+    focusedThisSec = 0;
     ticker = setInterval(tick, 1000);
     draw(); setIcon(true);
   }
 
-  function pause() { clearInterval(ticker); running = false; setIcon(false); }
+  function pause() {
+    clearInterval(ticker); running = false;
+    // 일시정지 시 지금까지 집중한 시간 누적
+    if (mode === 'focus' && focusedThisSec > 0) {
+      addFocusSec(focusedThisSec);
+      focusedThisSec = 0;
+    }
+    setIcon(false);
+  }
 
   function reset() {
-    pause(); started = false; applyMode(mode); draw(); setIcon(false);
+    pause(); started = false; focusedThisSec = 0;
+    applyMode(mode); draw(); setIcon(false);
   }
 
   let bannerTimer = null;
@@ -464,7 +523,7 @@
   });
   function commitInp() {
     const val = timeInp.value.trim(); let s = 0;
-    if (val.includes(':')) { const [m,sc] = val.split(':').map(Number); s = (m||0)*60+(sc||0); }
+    if (val.includes(':')) { const [m,sc] = val.split(':').map(Number); s=(m||0)*60+(sc||0); }
     else s = (parseInt(val)||0)*60;
     const mx = mode === 'focus' ? MAX_F : MAX_B;
     s = Math.max(60, Math.min(mx, s));
@@ -476,12 +535,10 @@
   timeInp.addEventListener('blur', commitInp);
   timeInp.addEventListener('keydown', e => { if (e.key === 'Enter') commitInp(); });
 
-  /* ── 드래그 — SVG viewBox 좌표 기준 ── */
+  /* ── 드래그 ── */
   let dragging = false;
-
   function pctFromPointer(clientX, clientY) {
     const rect = ringWrap.getBoundingClientRect();
-    /* 실제 픽셀 → viewBox(210) 비율로 변환 */
     const scale = 210 / rect.width;
     const lx = (clientX - rect.left) * scale;
     const ly = (clientY - rect.top) * scale;
@@ -489,14 +546,12 @@
     if (deg < 0) deg += 360;
     return deg / 360;
   }
-
   function startDrag() {
     if (running) return;
     dragging = true;
     handle.setAttribute('r', '8');
     dragPrev.setAttribute('opacity', '0.18');
   }
-
   function doDrag(clientX, clientY) {
     if (!dragging) return;
     const pct = pctFromPointer(clientX, clientY);
@@ -504,21 +559,14 @@
     let s = Math.max(60, Math.min(mx, Math.round(pct * mx)));
     if (mode === 'focus') fSec = s; else bSec = s;
     total = s; remain = s; started = false;
-
-    /* 핸들 위치 */
     const { x, y } = handleXY(s / mx);
     handle.setAttribute('cx', x.toFixed(2));
     handle.setAttribute('cy', y.toFixed(2));
     handle.setAttribute('opacity', '1');
-
-    /* 채움 링 */
     dragFill.setAttribute('opacity', '0.5');
     dragFill.setAttribute('stroke-dashoffset', (CIRC * (1 - s / mx)).toFixed(2));
-
     timeTxt.textContent = fmt(s);
-    document.title = fmt(s) + ' · 설정 중';
   }
-
   function endDrag() {
     if (!dragging) return;
     dragging = false;
@@ -537,6 +585,7 @@
 
   /* ── 초기화 ── */
   initNotif();
+  renderTodayTime();
   draw();
   updateDots();
 </script>
