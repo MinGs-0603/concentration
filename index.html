@@ -1,68 +1,589 @@
 <!DOCTYPE html>
 <html lang="ko">
-
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>뽀모도로</title>
-    <link rel="stylesheet" href="style.css" />
-</head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+  <meta name="apple-mobile-web-app-title" content="뽀모도로"/>
+  <title>뽀모도로</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
+    html, body {
+      height: 100%;
+      font-family: -apple-system, 'SF Pro Display', BlinkMacSystemFont, sans-serif;
+      background: #F5EFE0;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+
+    /* 반응형 카드 */
+    #card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: clamp(1.2rem, 3vw, 2rem);
+      width: min(300px, 90vw);
+    }
+
+    .tabs {
+      display: flex;
+      background: #E8DDC8;
+      border-radius: 16px;
+      padding: 4px;
+      width: 100%;
+    }
+    .tab {
+      flex: 1;
+      padding: clamp(8px, 2vw, 11px) 0;
+      text-align: center;
+      font-size: clamp(10px, 2.5vw, 12px);
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: #9C8560;
+      border-radius: 13px;
+      cursor: pointer;
+      transition: all 0.22s;
+      user-select: none;
+    }
+    .tab.active { background: #3D2B1A; color: #F5EFE0; }
+
+    /* 링 — 화면 크기에 맞게 */
+    #ring-wrap {
+      position: relative;
+      width: min(260px, 70vw);
+      height: min(260px, 70vw);
+      cursor: grab;
+      user-select: none;
+    }
+    #ring-wrap:active { cursor: grabbing; }
+
+    #ring-svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+      overflow: visible;
+    }
+
+    #time-center {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: clamp(4px, 1vw, 8px);
+      pointer-events: none;
+      width: 100%;
+    }
+    #time-text {
+      font-size: clamp(36px, 12vw, 52px);
+      font-weight: 200;
+      color: #3D2B1A;
+      line-height: 1;
+      white-space: nowrap;
+      letter-spacing: -1px;
+      pointer-events: all;
+      cursor: pointer;
+    }
+    #time-inp {
+      font-size: clamp(36px, 12vw, 52px);
+      font-weight: 200;
+      color: #3D2B1A;
+      background: transparent;
+      border: none;
+      outline: none;
+      border-bottom: 1.5px solid #B09060;
+      width: 70%;
+      text-align: center;
+      display: none;
+      font-family: inherit;
+      letter-spacing: -1px;
+      line-height: 1;
+    }
+    #mode-lbl {
+      font-size: clamp(9px, 2vw, 11px);
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: #B09060;
+      pointer-events: none;
+    }
+
+    #drag-h {
+      position: absolute;
+      width: clamp(12px, 3vw, 16px);
+      height: clamp(12px, 3vw, 16px);
+      border-radius: 50%;
+      background: #3D2B1A;
+      border: 3px solid #F5EFE0;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 10;
+      transition: background 0.5s, width 0.15s, height 0.15s, box-shadow 0.15s;
+    }
+    #drag-h.dragging {
+      width: clamp(16px, 4vw, 22px);
+      height: clamp(16px, 4vw, 22px);
+      box-shadow: 0 0 0 6px rgba(61,43,26,0.12);
+    }
+
+    #controls {
+      display: flex;
+      gap: clamp(14px, 4vw, 22px);
+      align-items: center;
+    }
+
+    #reset-btn {
+      width: clamp(46px, 12vw, 56px);
+      height: clamp(46px, 12vw, 56px);
+      border-radius: 50%;
+      border: 1.5px solid #C8B898;
+      background: #EDE3D0;
+      color: #6A5438;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    #reset-btn:hover { background: #E0D4BC; border-color: #A8906A; }
+    #reset-btn svg { width: clamp(16px, 4vw, 20px); height: clamp(16px, 4vw, 20px); }
+
+    #play-btn {
+      width: clamp(64px, 17vw, 78px);
+      height: clamp(64px, 17vw, 78px);
+      border-radius: 50%;
+      background: #3D2B1A;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      box-shadow: 0 6px 22px rgba(61,43,26,0.38), 0 2px 6px rgba(61,43,26,0.22);
+    }
+    #play-btn:hover { background: #2A1A0A; }
+    #play-btn:active { transform: scale(0.93); }
+    #play-btn svg {
+      width: clamp(22px, 6vw, 28px);
+      height: clamp(22px, 6vw, 28px);
+      fill: #F5EFE0;
+      flex-shrink: 0;
+    }
+
+    .dots { display: flex; gap: clamp(6px, 2vw, 10px); }
+    .dot {
+      width: clamp(5px, 1.5vw, 7px);
+      height: clamp(5px, 1.5vw, 7px);
+      border-radius: 50%;
+      background: #D4C4A4;
+      transition: background 0.3s;
+    }
+    .dot.done { background: #7A5830; }
+
+    /* 알림 권한 버튼 */
+    #notif-btn {
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      color: #B09060;
+      background: transparent;
+      border: 0.5px solid #C8B898;
+      border-radius: 20px;
+      padding: 6px 14px;
+      cursor: pointer;
+      transition: background 0.15s, opacity 0.3s;
+      font-family: inherit;
+    }
+    #notif-btn:hover { background: #EDE3D0; }
+    #notif-btn.granted { opacity: 0; pointer-events: none; height: 0; padding: 0; border: none; overflow: hidden; }
+
+    #banner {
+      position: fixed;
+      top: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #3D2B1A;
+      color: #F5EFE0;
+      font-size: 13px;
+      letter-spacing: 0.06em;
+      padding: 12px 26px;
+      border-radius: 28px;
+      white-space: nowrap;
+      z-index: 100;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      font-family: inherit;
+    }
+    #banner.show { opacity: 1; }
+
+    /* 아이패드 세로 최적화 */
+    @media (min-width: 600px) and (max-width: 1024px) {
+      #ring-wrap {
+        width: min(320px, 55vw);
+        height: min(320px, 55vw);
+      }
+    }
+
+    /* 아이패드 가로 */
+    @media (min-width: 1024px) {
+      #ring-wrap {
+        width: 280px;
+        height: 280px;
+      }
+      #card { width: 320px; }
+    }
+  </style>
+</head>
 <body>
 
-    <div id="card">
-        <div class="tabs">
-            <div class="tab active" id="tab-f">집중</div>
-            <div class="tab" id="tab-b">휴식</div>
-        </div>
+<div id="card">
+  <div class="tabs">
+    <div class="tab active" id="tab-f">집중</div>
+    <div class="tab" id="tab-b">휴식</div>
+  </div>
 
-        <div id="ring-wrap">
-            <div id="drag-h"></div>
-            <svg width="210" height="210" viewBox="0 0 210 210" style="display:block;overflow:visible">
-                <circle cx="105" cy="105" r="90" fill="none" stroke="#3D2B1A" stroke-width="1" opacity="0.12" />
-                <circle id="drag-preview" cx="105" cy="105" r="90" fill="none" stroke="#3D2B1A" stroke-width="1.5"
-                    stroke-linecap="round" stroke-dasharray="4 6" transform="rotate(-90 105 105)" opacity="0"
-                    style="transition: opacity 0.15s;" />
-                <circle id="drag-fill" cx="105" cy="105" r="90" fill="none" stroke="#3D2B1A" stroke-width="2"
-                    stroke-linecap="round" stroke-dasharray="565.49" stroke-dashoffset="565.49"
-                    transform="rotate(-90 105 105)" opacity="0" />
-                <circle id="prog" cx="105" cy="105" r="90" fill="none" stroke="#B83020" stroke-width="2"
-                    stroke-linecap="round" stroke-dasharray="565.49" stroke-dashoffset="565.49"
-                    transform="rotate(-90 105 105)" opacity="0" />
-            </svg>
-            <div id="time-center">
-                <div id="time-text">50:00</div>
-                <input id="time-inp" type="text" maxlength="5" placeholder="MM:SS" />
-                <div id="mode-lbl">집중</div>
-            </div>
-        </div>
-
-        <div id="controls">
-            <button id="reset-btn" title="초기화">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
-                    stroke-linejoin="round">
-                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-                    <path d="M3 3v5h5" />
-                </svg>
-            </button>
-            <button id="play-btn">
-                <svg id="play-icon" viewBox="0 0 24 24" fill="#F5EFE0">
-                    <path d="M6 3.5l13 8.5-13 8.5V3.5z" />
-                </svg>
-            </button>
-        </div>
-
-        <div class="dots">
-            <div class="dot" id="d0"></div>
-            <div class="dot" id="d1"></div>
-            <div class="dot" id="d2"></div>
-            <div class="dot" id="d3"></div>
-        </div>
+  <div id="ring-wrap">
+    <div id="drag-h"></div>
+    <svg id="ring-svg" viewBox="0 0 210 210" style="overflow:visible">
+      <circle cx="105" cy="105" r="90"
+        fill="none" stroke="#3D2B1A" stroke-width="1" opacity="0.12"/>
+      <circle id="drag-preview" cx="105" cy="105" r="90"
+        fill="none" stroke="#3D2B1A" stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-dasharray="4 6"
+        transform="rotate(-90 105 105)"
+        opacity="0"
+        style="transition: opacity 0.15s;"/>
+      <circle id="drag-fill" cx="105" cy="105" r="90"
+        fill="none" stroke="#3D2B1A" stroke-width="2"
+        stroke-linecap="round"
+        stroke-dasharray="565.49" stroke-dashoffset="565.49"
+        transform="rotate(-90 105 105)"
+        opacity="0"/>
+      <circle id="prog" cx="105" cy="105" r="90"
+        fill="none" stroke="#B83020" stroke-width="2"
+        stroke-linecap="round"
+        stroke-dasharray="565.49" stroke-dashoffset="565.49"
+        transform="rotate(-90 105 105)"
+        opacity="0"
+        style="transition: stroke 0.5s ease;"/>
+    </svg>
+    <div id="time-center">
+      <div id="time-text">50:00</div>
+      <input id="time-inp" type="text" maxlength="5" placeholder="MM:SS"/>
+      <div id="mode-lbl">집중</div>
     </div>
+  </div>
 
-    <div id="banner"></div>
+  <div id="controls">
+    <button id="reset-btn" title="초기화">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+        <path d="M3 3v5h5"/>
+      </svg>
+    </button>
+    <button id="play-btn">
+      <svg id="play-icon" viewBox="0 0 24 24" fill="#F5EFE0">
+        <path d="M6 3.5l13 8.5-13 8.5V3.5z"/>
+      </svg>
+    </button>
+  </div>
 
-    <script src="script.js"></script>
+  <div class="dots">
+    <div class="dot" id="d0"></div>
+    <div class="dot" id="d1"></div>
+    <div class="dot" id="d2"></div>
+    <div class="dot" id="d3"></div>
+  </div>
+
+  <button id="notif-btn">🔔 알림 허용</button>
+</div>
+
+<div id="banner"></div>
+
+<script>
+  const FOCUS_DEF = 50 * 60;
+  const BREAK_DEF = 10 * 60;
+  const MAX_F = 60 * 60;
+  const MAX_B = 15 * 60;
+  const R = 90;
+  const CIRC = 2 * Math.PI * R;
+  const CF = '#B83020';
+  const CB = '#2E7D52';
+  const CI = '#3D2B1A';
+
+  let mode = 'focus', fSec = FOCUS_DEF, bSec = BREAK_DEF;
+  let total = FOCUS_DEF, remain = FOCUS_DEF;
+  let running = false, started = false, session = 0, ticker = null;
+
+  const prog      = document.getElementById('prog');
+  const dragFill  = document.getElementById('drag-fill');
+  const dragPrev  = document.getElementById('drag-preview');
+  const timeTxt   = document.getElementById('time-text');
+  const timeInp   = document.getElementById('time-inp');
+  const modeLbl   = document.getElementById('mode-lbl');
+  const playBtn   = document.getElementById('play-btn');
+  const playIcon  = document.getElementById('play-icon');
+  const resetBtn  = document.getElementById('reset-btn');
+  const tabF      = document.getElementById('tab-f');
+  const tabB      = document.getElementById('tab-b');
+  const ringWrap  = document.getElementById('ring-wrap');
+  const dragH     = document.getElementById('drag-h');
+  const banner    = document.getElementById('banner');
+  const notifBtn  = document.getElementById('notif-btn');
+
+  /* ── 브라우저 알림 ── */
+  function initNotif() {
+    if (!('Notification' in window)) {
+      notifBtn.style.display = 'none';
+      return;
+    }
+    if (Notification.permission === 'granted') {
+      notifBtn.classList.add('granted');
+    }
+  }
+
+  notifBtn.addEventListener('click', async () => {
+    const perm = await Notification.requestPermission();
+    if (perm === 'granted') {
+      notifBtn.classList.add('granted');
+      new Notification('뽀모도로 🍅', { body: '알림이 허용됐습니다!' });
+    }
+  });
+
+  function sendNotif(title, body) {
+    if (Notification.permission === 'granted') {
+      new Notification(title, { body, icon: '' });
+    }
+  }
+
+  /* ── 유틸 ── */
+  function fmt(s) {
+    return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+  }
+
+  function draw() {
+    const pct = total > 0 ? remain / total : 0;
+    const deg = 360 * pct - 90;
+    const rad = deg * Math.PI / 180;
+    dragH.style.left = (105 + R * Math.cos(rad)) + 'px';
+    dragH.style.top  = (105 + R * Math.sin(rad)) + 'px';
+
+    if (started) {
+      prog.setAttribute('opacity', '1');
+      prog.setAttribute('stroke', mode === 'focus' ? CF : CB);
+      prog.setAttribute('stroke-dashoffset', (CIRC * (1 - pct)).toFixed(2));
+      dragH.style.background = mode === 'focus' ? CF : CB;
+    } else {
+      prog.setAttribute('opacity', '0');
+      dragH.style.background = CI;
+    }
+
+    timeTxt.textContent = fmt(remain);
+    document.title = fmt(remain) + (mode === 'focus' ? ' · 집중' : ' · 휴식');
+  }
+
+  function setIcon(playing) {
+    playIcon.innerHTML = playing
+      ? '<rect x="5" y="4" width="4.5" height="16" rx="1.5"/><rect x="14.5" y="4" width="4.5" height="16" rx="1.5"/>'
+      : '<path d="M6 3.5l13 8.5-13 8.5V3.5z"/>';
+  }
+
+  function updateDots() {
+    for (let i = 0; i < 4; i++) {
+      document.getElementById('d' + i).className = 'dot' + (i < session ? ' done' : '');
+    }
+  }
+
+  function applyMode(m) {
+    mode = m;
+    total = m === 'focus' ? fSec : bSec;
+    remain = total;
+    tabF.className = 'tab' + (m === 'focus' ? ' active' : '');
+    tabB.className = 'tab' + (m === 'break' ? ' active' : '');
+    modeLbl.textContent = m === 'focus' ? '집중' : '휴식';
+  }
+
+  /* ── 타이머 ── */
+  function tick() {
+    if (remain <= 0) {
+      clearInterval(ticker);
+      running = false;
+      chime();
+
+      if (mode === 'focus') {
+        session = Math.min(session + 1, 4);
+        updateDots();
+        sendNotif('집중 완료 🍅', '잘 하셨어요! 10분 휴식을 시작합니다.');
+        showBanner('집중 완료! 휴식을 시작합니다');
+        started = true;
+        applyMode('break');
+        draw();
+        ticker = setInterval(tick, 1000);
+        running = true;
+        setIcon(true);
+      } else {
+        sendNotif('휴식 종료 ☕', '다시 집중할 준비가 됐나요?');
+        showBanner('휴식 종료 — 새 뽀모도로를 시작하세요');
+        started = false;
+        applyMode('focus');
+        draw();
+        setIcon(false);
+      }
+      return;
+    }
+    remain--;
+    draw();
+  }
+
+  function start() {
+    if (running || remain <= 0) return;
+    started = true;
+    running = true;
+    ticker = setInterval(tick, 1000);
+    draw();
+    setIcon(true);
+  }
+
+  function pause() {
+    clearInterval(ticker);
+    running = false;
+    setIcon(false);
+  }
+
+  function reset() {
+    pause();
+    started = false;
+    applyMode(mode);
+    draw();
+    setIcon(false);
+  }
+
+  /* ── 배너 ── */
+  let bannerTimer = null;
+  function showBanner(msg) {
+    banner.textContent = msg;
+    banner.classList.add('show');
+    clearTimeout(bannerTimer);
+    bannerTimer = setTimeout(() => banner.classList.remove('show'), 3000);
+  }
+
+  /* ── 알림음 ── */
+  function chime() {
+    try {
+      const ctx = new AudioContext();
+      [[523, 0], [659, 0.2], [784, 0.4]].forEach(([f, t]) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.frequency.value = f;
+        g.gain.setValueAtTime(0.15, ctx.currentTime + t);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.7);
+        o.start(ctx.currentTime + t);
+        o.stop(ctx.currentTime + t + 0.8);
+      });
+    } catch(e) {}
+  }
+
+  /* ── 이벤트 ── */
+  playBtn.addEventListener('click', () => { if (running) pause(); else start(); });
+  resetBtn.addEventListener('click', reset);
+
+  tabF.addEventListener('click', () => {
+    if (running && !confirm('타이머 실행 중입니다. 중단할까요?')) return;
+    pause(); started = false; applyMode('focus'); draw(); setIcon(false);
+  });
+  tabB.addEventListener('click', () => {
+    if (running && !confirm('타이머 실행 중입니다. 중단할까요?')) return;
+    pause(); started = false; applyMode('break'); draw(); setIcon(false);
+  });
+
+  timeTxt.addEventListener('dblclick', () => {
+    if (running) return;
+    timeTxt.style.display = 'none';
+    timeInp.style.display = 'block';
+    timeInp.value = fmt(remain);
+    timeInp.focus();
+    timeInp.select();
+  });
+
+  function commitInp() {
+    const val = timeInp.value.trim();
+    let s = 0;
+    if (val.includes(':')) {
+      const [m, sc] = val.split(':').map(Number);
+      s = (m || 0) * 60 + (sc || 0);
+    } else {
+      s = (parseInt(val) || 0) * 60;
+    }
+    const mx = mode === 'focus' ? MAX_F : MAX_B;
+    s = Math.max(60, Math.min(mx, s));
+    if (mode === 'focus') fSec = s; else bSec = s;
+    total = s; remain = s; started = false;
+    timeInp.style.display = 'none';
+    timeTxt.style.display = '';
+    draw();
+  }
+  timeInp.addEventListener('blur', commitInp);
+  timeInp.addEventListener('keydown', e => { if (e.key === 'Enter') commitInp(); });
+
+  /* ── 드래그 ── */
+  let dragging = false;
+
+  function secFrom(cx, cy) {
+    const rect = ringWrap.getBoundingClientRect();
+    const cx2 = rect.left + rect.width / 2;
+    const cy2 = rect.top + rect.height / 2;
+    let deg = Math.atan2(cy - cy2, cx - cx2) * 180 / Math.PI + 90;
+    if (deg < 0) deg += 360;
+    const mx = mode === 'focus' ? MAX_F : MAX_B;
+    return Math.max(60, Math.min(mx, Math.round((deg / 360) * mx)));
+  }
+
+  function startDrag() {
+    if (running) return;
+    dragging = true;
+    dragH.classList.add('dragging');
+    dragPrev.setAttribute('opacity', '0.18');
+  }
+
+  function doDrag(cx, cy) {
+    if (!dragging) return;
+    const s = secFrom(cx, cy);
+    if (mode === 'focus') fSec = s; else bSec = s;
+    total = s; remain = s; started = false;
+    const pct = s / (mode === 'focus' ? MAX_F : MAX_B);
+    dragFill.setAttribute('opacity', '0.55');
+    dragFill.setAttribute('stroke-dashoffset', (CIRC * (1 - pct)).toFixed(2));
+    draw();
+  }
+
+  function endDrag() {
+    if (!dragging) return;
+    dragging = false;
+    dragH.classList.remove('dragging');
+    dragPrev.setAttribute('opacity', '0');
+    dragFill.setAttribute('opacity', '0');
+  }
+
+  ringWrap.addEventListener('mousedown', e => { if (e.detail === 2) return; startDrag(); e.preventDefault(); });
+  document.addEventListener('mousemove', e => { if (dragging) doDrag(e.clientX, e.clientY); });
+  document.addEventListener('mouseup', endDrag);
+  ringWrap.addEventListener('touchstart', () => { startDrag(); }, { passive: true });
+  document.addEventListener('touchmove', e => { if (dragging) doDrag(e.touches[0].clientX, e.touches[0].clientY); }, { passive: true });
+  document.addEventListener('touchend', endDrag);
+
+  /* ── 초기화 ── */
+  initNotif();
+  draw();
+  updateDots();
+</script>
 </body>
-
 </html>
