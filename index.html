@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>뽀모도로</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+    <div id="card">
+        <div class="tabs">
+            <div class="tab active" id="tab-f">집중</div>
+            <div class="tab" id="tab-b">휴식</div>
+        </div>
+
+        <div id="ring-wrap">
+            <div id="drag-h"></div>
+            <svg width="210" height="210" viewBox="0 0 210 210" style="display:block;overflow:visible">
+                <circle cx="105" cy="105" r="90" fill="none" stroke="#3D2B1A" stroke-width="1" opacity="0.12" />
+                <circle id="drag-preview" cx="105" cy="105" r="90" fill="none" stroke="#3D2B1A" stroke-width="1.5"
+                    stroke-linecap="round" stroke-dasharray="4 6" transform="rotate(-90 105 105)" opacity="0"
+                    style="transition: opacity 0.15s;" />
+                <circle id="drag-fill" cx="105" cy="105" r="90" fill="none" stroke="#3D2B1A" stroke-width="2"
+                    stroke-linecap="round" stroke-dasharray="565.49" stroke-dashoffset="565.49"
+                    transform="rotate(-90 105 105)" opacity="0" />
+                <circle id="prog" cx="105" cy="105" r="90" fill="none" stroke="#B83020" stroke-width="2"
+                    stroke-linecap="round" stroke-dasharray="565.49" stroke-dashoffset="565.49"
+                    transform="rotate(-90 105 105)" opacity="0" />
+            </svg>
+            <div id="time-center">
+                <div id="time-text">50:00</div>
+                <input id="time-inp" type="text" maxlength="5" placeholder="MM:SS" />
+                <div id="mode-lbl">집중</div>
+            </div>
+        </div>
+
+        <div id="controls">
+            <button id="reset-btn" title="초기화">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                    <path d="M3 3v5h5" />
+                </svg>
+            </button>
+            <button id="play-btn">
+                <svg id="play-icon" viewBox="0 0 24 24" fill="#F5EFE0">
+                    <path d="M6 3.5l13 8.5-13 8.5V3.5z" />
+                </svg>
+            </button>
+        </div>
+
+        <div class="dots">
+            <div class="dot" id="d0"></div>
+            <div class="dot" id="d1"></div>
+            <div class="dot" id="d2"></div>
+            <div class="dot" id="d3"></div>
+        </div>
+    </div>
+
+    <div id="banner"></div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
